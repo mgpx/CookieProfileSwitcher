@@ -1,27 +1,55 @@
 <html>
 <head>
 <style>
-body{margin:0px !important;min-width:300px;}
+:root{
+	--ink:#1b2733;
+	--muted:#6c7b8a;
+	--accent:#1cc7d0;
+	--accent-2:#4a7dff;
+	--panel:#ffffff;
+	--shell:#f5f8fb;
+}
+body{
+	margin:0px !important;
+	min-width:300px;
+	font-family: "Trebuchet MS", "Segoe UI Variable", "Segoe UI", sans-serif;
+	background: linear-gradient(180deg, #f4f8ff 0%, #ffffff 55%);
+	color: var(--ink);
+}
+.app{
+	padding: 10px;
+}
 .header{
-	background-color: #00bcd4;
-    width: 100%;
-    padding: 5px;
-    font-size: smaller;
-	
+	background: linear-gradient(120deg, rgba(28,199,208,0.25), rgba(74,125,255,0.18));
+	border-radius: 12px;
+	padding: 12px 14px;
+	font-size: 12px;
+	box-shadow: 0 10px 20px rgba(16, 50, 74, 0.08);
+}
+.header h2{
+	margin: 0;
+	font-size: 14px;
 }
 .footer{
 	height:30px;
-	margin: 0 0 0 0;
-	padding: 0 0 0 0;
+	margin: 8px 0 0 0;
+	padding: 0;
 }
 .footer span{
 	padding:10px;
 }
 .footer span a{
-	color: gray;
+	color: var(--muted);
 }
 .pull-right{
 	float:right;
+}
+.card{
+	background: var(--panel);
+	border-radius: 12px;
+	border: 1px solid rgba(156, 171, 189, 0.3);
+	box-shadow: 0 12px 24px rgba(16, 24, 40, 0.08);
+	overflow: hidden;
 }
 .table {
   width: 100%;
@@ -34,12 +62,12 @@ body{margin:0px !important;min-width:300px;}
 .table td {
   padding: 0.75rem;
   vertical-align: top;
-  border-top: 1px solid #eceeef;
+  border-top: 1px solid #e3e9f0;
 }
 
 .table thead th {
   vertical-align: bottom;
-  border-bottom: 2px solid #eceeef;
+  border-bottom: 2px solid #e3e9f0;
 }
 
 .table tbody + tbody {
@@ -70,11 +98,11 @@ body{margin:0px !important;min-width:300px;}
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(74, 125, 255, 0.05);
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.075);
+  background-color: rgba(28, 199, 208, 0.08);
 }
 
 .table-active,
@@ -193,13 +221,94 @@ body{margin:0px !important;min-width:300px;}
 .no-wrap{
 	white-space: nowrap;
 }
+.smallText a{
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	background: #eef3fb;
+	color: #2750a7;
+	text-decoration: none;
+}
+.smallText a:hover{
+	background: #dfe9f7;
+	text-decoration: none;
+}
+.smallText a i{
+	font-size: 13px;
+}
+.smallText a.removeProfile{
+	color: #a53030;
+	background: #f7eaea;
+}
+.smallText a.removeProfile:hover{
+	background: #f2dcdc;
+}
+.smallText a.saveProfileCookies{
+	color: #0c7b85;
+	background: #e7f6f7;
+}
+.smallText a.saveProfileCookies:hover{
+	background: #d9f0f2;
+}
+.table a{
+	color: #2750a7;
+	font-weight: 600;
+	text-decoration: none;
+}
+.table a:hover{
+	text-decoration: underline;
+}
+.saveProfileCookies{
+	color: #0c7b85;
+	font-weight: 700;
+}
+.profileLabel{
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: #0f3a5a;
+	font-weight: 700;
+}
+.profileLabel::before{
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--accent), var(--accent-2));
+	box-shadow: 0 0 0 3px rgba(28, 199, 208, 0.15);
+}
+.table .profileLabel{
+	cursor: default;
+}
+input#profileName_input{
+	width: 100%;
+	border-radius: 8px;
+	border: 1px solid rgba(156, 171, 189, 0.6);
+	padding: 6px 8px;
+}
+a#profileCreate_button{
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 10px;
+	border-radius: 8px;
+	background: linear-gradient(135deg, var(--accent), var(--accent-2));
+	color: #ffffff;
+	font-weight: 600;
+	text-decoration: none;
+}
 </style>
 <link rel="stylesheet" href="css/font-awesome.min.css">
 </head>
 <body>
+	<div class="app">
 	<div class="header">
 		<h2><label id="domain_label">Undefined:</label> - (<label id="profile_label">Undefined:</label>)</h2>
   </div>
+	<div class="card">
 <table id="profileTable" class="table table-striped">
   <tr>
     <th style="text-align:left;">Profile List</th>
@@ -209,7 +318,16 @@ body{margin:0px !important;min-width:300px;}
     <td><input type="textbox" id="profileName_input" placeholder="New Profile Name"></input></td>
     <td><a href="#"id="profileCreate_button">create</a></td>
   </tr>
+  <tr>
+    <td colspan="2">
+      <label style="font-weight:600; color:#4b5a6a;">
+        <input type="checkbox" id="clone-cookies-checkbox" style="margin-right:6px;">
+        Clone cookies from current profile
+      </label>
+    </td>
+  </tr>
 </table>
+	</div>
 <!--<label id="message_label">Messages</label><br><br>
 <label id="storage_label">Storage</label><br><br>
 <label id="cookie_label">Cookie</label><br><br>-->
@@ -218,7 +336,8 @@ body{margin:0px !important;min-width:300px;}
 		<a href="options.html" target="_blank" text="Options"><i class ="fa fa-gear fa-lg"> </i></a>
 	</span>
 </div>
-<script src="scripts/jquery-3.1.1.min.js"></script>
+	</div>
+<script src="scripts/jquery-3.7.1.js"></script>
 <script src="profiles.js"></script>
   </body>
 </html>

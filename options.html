@@ -10,18 +10,25 @@
 	<link rel="stylesheet" type="text/css" href="css/options.css" />
 	
 	
-	<script src="scripts/jquery-3.1.1.min.js"></script>
-	<script src="scripts/bootstrap.min.js"></script>
-	<script src="scripts/showdown.min.js"></script>
+	<script src="scripts/jquery-3.7.1.js"></script>
+	<script src="scripts/bootstrap-3.4.1.js"></script>
+	<script src="scripts/showdown-2.1.0.js"></script>
 	<script src="scripts/browser-functions.js"></script>
 	<script src="options.js"></script>
 </head>
 
 <body onbeforeunload="">
-	<div class="container">
-		<h1><img src="cookie.png" alt="" style="width: 64px; height: 64px;" /> Cookie Profile Switcher</h1>
-		
-		<a id="donate-button" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MNLRFA5B6CB4N" target="_blank"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" alt="Donate" alt="PayPal - The safer, easier way to pay online!"/></a>
+	<div class="container app">
+		<div class="app-header">
+			<div class="app-title">
+				<img src="cookie.png" alt="" class="app-icon" />
+				<div>
+					<h1>Cookie Profile Switcher</h1>
+					<p class="app-subtitle">Manage multiple cookie sessions per site without logging in and out.</p>
+				</div>
+			</div>
+			<a id="donate-button" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MNLRFA5B6CB4N" target="_blank" class="donate-pill">Donate</a>
+		</div>
 		
 
 		<hr />
@@ -30,13 +37,13 @@
     		<strong>Important:</strong> </a>.
 		</div>-->
 		
-		<div class="tabbable tabs-left">
-			<ul id="menu" class="nav nav-tabs" style="margin-top: 40px; height: 450px;">
+		<div class="tabbable tabs-left app-shell">
+			<ul id="menu" class="nav nav-tabs app-tabs">
 				<li class="active"><a href="#about" data-toggle="tab" data-message="settingsGroupHelp">About</a></li>
 				<li><a href="#data" data-toggle="tab">Data</a></li>
 				<li><a href="#changelog" data-toggle="tab">Changelog</a></li>
 			</ul>
-			<div class="tab-content">
+			<div class="tab-content app-panel">
 				<div class="tab-pane fade in active form-horizontal" id="about">
 					<fieldset>
 						<legend data-message="settingsGroupAbout">About</legend>
@@ -73,6 +80,19 @@
 				<div class="tab-pane fade in" id="data">
 					<fieldset id="data-content">
 					<legend data-message="settingsGroupData">Data</legend>
+					<h4>Domain Manager</h4>
+					<p class="muted">Select a domain to view and manage only its profiles.</p>
+					<div class="domain-manager">
+						<div class="domain-row">
+							<label for="domain-select" class="domain-label">Domain</label>
+							<select id="domain-select" class="form-control"></select>
+							<button id="refresh-domains" class="btn btn-default">Refresh</button>
+							<button id="delete-domain" class="btn btn-warning">Delete Domain</button>
+						</div>
+						<div id="domain-profiles" class="domain-profiles"></div>
+					</div>
+					<hr />
+					<h4>Advanced (Raw JSON)</h4>
 					<h4>Profiles JSON Data Blob</h4>
 					<div class="alert alert-warning">
 						<strong>Warning: Modifying this data could potentially cause issues with your profiles or the extension. Make sure you know what you are doing, or at least export your data first! If all else fails, you can clear your profile data using the button below & start over.</strong>

@@ -10,7 +10,7 @@
 	"default_popup": "profiles.html"
   },
   "background": {
-    "scripts": ["background.js", "scripts/jquery-3.1.1.min.js"]
+    "scripts": ["background.js", "scripts/jquery-3.7.1.js"]
   },
   "manifest_version": 2
 }

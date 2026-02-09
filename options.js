@@ -5,6 +5,7 @@ function init(){
 	$('#about-extension-version').html(extVersionNumber);
 	loadChangelog();
 	loadProfileData();
+	loadDomainManager();
 }
 
 function loadChangelog() {
@@ -35,6 +36,7 @@ function saveProfileData(){
 	if(!jQuery.isEmptyObject(profile)){
 		if(confirm("Are you sure you want to save profile data?")){
 			chrome.storage.local.set({'profiles': profile}, function(){
+				loadDomainManager();
 			});
 		}
 		else{
@@ -48,6 +50,7 @@ function clearProfileData(){
 	if(confirm("Are you sure you want to clear profile data?")){
 		chrome.storage.local.set({'profiles': profile}, function(){
 			$('#profile-data-textarea').val("");
+			loadDomainManager();
 		});
 	}
 	else{
@@ -116,9 +119,134 @@ function _imp() {
 	if(!jQuery.isEmptyObject(_myImportedData)){
 		chrome.storage.local.set({'profiles': _myImportedData}, function(){
 			$('#profile-data-textarea').val(JSON.stringify(_myImportedData, undefined, "\t"));
+			loadDomainManager();
 		});
 	}
 	$('#import-profile-data-input').val("");
+}
+
+function loadDomainManager(){
+	chrome.storage.local.get('profiles', function(items){
+		var profiles = (items && items.profiles) ? items.profiles : {};
+		var domains = Object.keys(profiles).sort();
+		var $select = $('#domain-select');
+		$select.empty();
+		if(domains.length === 0){
+			$select.append($('<option/>', { value: '', text: 'No domains found' }));
+			$('#domain-profiles').html('<div class="muted">No profiles saved.</div>');
+			return;
+		}
+		for(var i = 0; i < domains.length; i++){
+			$select.append($('<option/>', { value: domains[i], text: domains[i] }));
+		}
+		renderDomainProfiles(domains[0]);
+	});
+}
+
+function renderDomainProfiles(domain){
+	chrome.storage.local.get('profiles', function(items){
+		var profiles = (items && items.profiles) ? items.profiles : {};
+		var domainData = profiles[domain];
+		var $container = $('#domain-profiles');
+		$container.empty();
+		if(!domainData || !domainData.profileData){
+			$container.html('<div class="muted">No profiles for this domain.</div>');
+			return;
+		}
+		var current = domainData.currentProfile;
+		var keys = Object.keys(domainData.profileData);
+		if(keys.length === 0){
+			$container.html('<div class="muted">No profiles for this domain.</div>');
+			return;
+		}
+		for(var i = 0; i < keys.length; i++){
+			var name = keys[i];
+			var $item = $('<div/>', { 'class': 'profile-item' });
+			var $name = $('<div/>', { 'class': 'profile-name' + (name === current ? ' current' : ''), text: name });
+			var $actions = $('<div/>', { 'class': 'profile-actions' });
+			var $setCurrent = $('<button/>', { 'class': 'btn btn-info', text: 'Set Current' });
+			var $rename = $('<button/>', { 'class': 'btn btn-default', text: 'Rename' });
+			var $remove = $('<button/>', { 'class': 'btn btn-danger', text: 'Remove' });
+
+			(function(domain, name){
+				$setCurrent.on('click', function(){
+					chrome.storage.local.get('profiles', function(items){
+						var profiles = (items && items.profiles) ? items.profiles : {};
+						if(!profiles[domain]){ return; }
+						profiles[domain].currentProfile = name;
+						chrome.storage.local.set({'profiles': profiles}, function(){
+							renderDomainProfiles(domain);
+						});
+					});
+				});
+				$rename.on('click', function(){
+					var newName = prompt('New profile name:', name);
+					if(!newName || newName === name){ return; }
+					chrome.storage.local.get('profiles', function(items){
+						var profiles = (items && items.profiles) ? items.profiles : {};
+						if(!profiles[domain] || !profiles[domain].profileData){ return; }
+						if(profiles[domain].profileData[newName]){
+							alert('A profile with that name already exists.');
+							return;
+						}
+						profiles[domain].profileData[newName] = profiles[domain].profileData[name];
+						delete profiles[domain].profileData[name];
+						if(profiles[domain].currentProfile === name){
+							profiles[domain].currentProfile = newName;
+						}
+						chrome.storage.local.set({'profiles': profiles}, function(){
+							renderDomainProfiles(domain);
+						});
+					});
+				});
+				$remove.on('click', function(){
+					if(!confirm('Remove this profile?')){ return; }
+					chrome.storage.local.get('profiles', function(items){
+						var profiles = (items && items.profiles) ? items.profiles : {};
+						if(!profiles[domain] || !profiles[domain].profileData){ return; }
+						delete profiles[domain].profileData[name];
+						var remaining = Object.keys(profiles[domain].profileData);
+						if(remaining.length === 0){
+							delete profiles[domain];
+						}
+						else if(profiles[domain].currentProfile === name){
+							profiles[domain].currentProfile = remaining[0];
+						}
+						chrome.storage.local.set({'profiles': profiles}, function(){
+							if(profiles[domain]){
+								renderDomainProfiles(domain);
+							}
+							else{
+								loadDomainManager();
+							}
+						});
+					});
+				});
+			})(domain, name);
+
+			$actions.append($setCurrent);
+			$actions.append($rename);
+			$actions.append($remove);
+			$item.append($name);
+			$item.append($actions);
+			$container.append($item);
+		}
+	});
+}
+
+function deleteDomain(){
+	var domain = $('#domain-select').val();
+	if(!domain){ return; }
+	if(!confirm('Delete all profiles for this domain?')){ return; }
+	chrome.storage.local.get('profiles', function(items){
+		var profiles = (items && items.profiles) ? items.profiles : {};
+		if(profiles[domain]){
+			delete profiles[domain];
+			chrome.storage.local.set({'profiles': profiles}, function(){
+				loadDomainManager();
+			});
+		}
+	});
 }
 
 
@@ -141,6 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#import-profile-data-input').addEventListener('change', importProfileData);
   document.querySelector('#export-profile-data').addEventListener('click', exportProfileData);
   document.querySelector('#send-email').addEventListener('click', sendEmail);
+  document.querySelector('#refresh-domains').addEventListener('click', loadDomainManager);
+  document.querySelector('#delete-domain').addEventListener('click', deleteDomain);
+  document.querySelector('#domain-select').addEventListener('change', function(e){ renderDomainProfiles(e.target.value); });
   //document.querySelector('#profileCreate_button').addEventListener('click', newProfile);
   //document.body.addEventListener('click', focusFilter);
   //document.querySelector('#remove_button').addEventListener('click', removeAll);
