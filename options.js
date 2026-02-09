@@ -19,14 +19,8 @@ function loadChangelog() {
 
 function loadProfileData(){
 	chrome.storage.local.get('profiles', function(items){
-		var profile;
-		if(jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles)){
-			
-		}
-		else{
-			profile = JSON.parse(JSON.stringify(items.profiles));
-			$('#profile-data-textarea').val(JSON.stringify(profile, undefined, "\t"));
-		}
+		var profile = (items && items.profiles) ? items.profiles : {};
+		$('#profile-data-textarea').val(JSON.stringify(profile, undefined, "\t"));
 	});
 	
 }

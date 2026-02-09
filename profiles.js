@@ -30,6 +30,9 @@ function getHostName(url) {
         return null;
     }
 }
+function isIpHost(hostname){
+	return /^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(hostname);
+}
 function getDomain(url) {
     var hostName = getHostName(url);
     var domain = url;
@@ -44,9 +47,26 @@ function getDomain(url) {
               domain = parts[2] + '.' + domain;
             }
         }
+        else {
+            domain = hostName;
+        }
     }
     debugLog(domain);
     return domain;
+}
+function getDomainKey(activeUrl){
+	try{
+		var u = new URL(activeUrl);
+		var hostname = u.hostname;
+		var port = u.port;
+		if(hostname === 'localhost' || isIpHost(hostname) || hostname.indexOf('.') === -1){
+			return port ? hostname + ':' + port : hostname;
+		}
+		return getDomain(activeUrl);
+	}
+	catch(e){
+		return getDomain(activeUrl);
+	}
 }
 // END DOMAIN FUNCTIONS //
 
@@ -177,12 +197,26 @@ function loadProfiles(){
 	chrome.storage.local.get('profiles', function(items){
 		var domain = $('#domain_label').html();
 		var profile;
+		var profiles = (items && items.profiles) ? items.profiles : {};
+		if(url){
+			var domainKey = getDomainKey(url);
+			if(profiles[url] && !profiles[domainKey]){
+				profiles[domainKey] = profiles[url];
+				delete profiles[url];
+				chrome.storage.local.set({ "profiles": profiles }, function(){});
+			}
+			if(domainKey && domainKey !== domain){
+				domain = domainKey;
+				currentDomain = domainKey;
+				domainLoaded();
+			}
+		}
 		
 		if(jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles) || jQuery.isEmptyObject(items.profiles[currentDomain])){
 			profile = JSON.parse('{"currentProfile":"Profile 1", "profileData":{"Profile 1": []}}');
 		}
 		else{
-			profile = items.profiles[domain];
+			profile = profiles[domain];
 		}
 		$('#profile_label').html(profile['currentProfile']);
 		//$('#storage_label').html(JSON.stringify(profile['profileData']));
@@ -271,75 +305,88 @@ function loadProfiles(){
 	});
 }
 function newProfile(){
-	chrome.storage.local.get('profiles', function(items){
-		var currentDomain = $('#domain_label').html();
-		var newProfileName = $('#profileName_input').val();
-		var cloneCookies = $('#clone-cookies-checkbox').is(':checked');
-		var profile = {};
-		var domainProfile = {};
+	var newProfileName = $('#profileName_input').val();
+	var cloneCookies = $('#clone-cookies-checkbox').is(':checked');
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		var activeUrl = (tabs && tabs.length > 0) ? tabs[0].url : null;
+		if(!activeUrl || activeUrl.indexOf('http') !== 0){
+			showToast('No active site');
+			return;
+		}
+		var domainFromUrl = getDomainKey(activeUrl);
+		chrome.storage.local.get('profiles', function(items){
+			var profile = {};
+			var domainProfile = {};
 		
-		if(jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles) || jQuery.isEmptyObject(items.profiles[currentDomain])){
-			domainProfile = JSON.parse('{"currentProfile":"Profile 1", "profileData":{"Profile 1": []}}');
-		}
-		else{
-			domainProfile = items.profiles[currentDomain];
-		}
+			if(jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles) || jQuery.isEmptyObject(items.profiles[domainFromUrl])){
+				domainProfile = JSON.parse('{"currentProfile":"Profile 1", "profileData":{"Profile 1": []}}');
+			}
+			else{
+				domainProfile = items.profiles[domainFromUrl];
+			}
 
-		if(!jQuery.isEmptyObject(items) && !jQuery.isEmptyObject(items.profiles)){
-			profile = items['profiles'];
-		}
+			if(!jQuery.isEmptyObject(items) && !jQuery.isEmptyObject(items.profiles)){
+				profile = items['profiles'];
+			}
 		
-		if(newProfileName != "")
-		{
-			if(cloneCookies === true){
-				chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-					var activeUrl = (tabs && tabs.length > 0) ? tabs[0].url : null;
-					var cookieQuery = (activeUrl && activeUrl.indexOf('http') === 0) ? { url: activeUrl } : { domain: currentDomain };
-					chrome.cookies.getAll(cookieQuery, function(cookies) {
+			if(newProfileName != "")
+			{
+				if(cloneCookies === true){
+					chrome.cookies.getAll({ url: activeUrl }, function(cookies) {
 						domainProfile['profileData'][newProfileName] = cookies;
-						profile[currentDomain] = domainProfile;
+						profile[domainFromUrl] = domainProfile;
+						currentDomain = domainFromUrl;
+						domainLoaded();
 						$('#profile_label').html(profile['currentProfile']);
 						chrome.storage.local.set({ "profiles": profile }, function(){
 							loadProfiles();
 						});
 					});
-				});
+				}
+				else{
+					domainProfile['profileData'][newProfileName] = [];
+					profile[domainFromUrl] = domainProfile;
+					currentDomain = domainFromUrl;
+					domainLoaded();
+					$('#profile_label').html(profile['currentProfile']);
+					chrome.storage.local.set({ "profiles": profile }, function(){
+						loadProfiles();
+					});
+				}
 			}
-			else{
-				domainProfile['profileData'][newProfileName] = [];
-				profile[currentDomain] = domainProfile;
-				$('#profile_label').html(profile['currentProfile']);
-				chrome.storage.local.set({ "profiles": profile }, function(){
-					loadProfiles();
-				});
-			}
-		}
-		return;
+			return;
+		});
 	});
 }
 function saveCurrentProfileCookies(event){
 	var target = event.currentTarget.getAttribute('data-profileName');
-	var currentDomain = $('#domain_label').html();
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 		var activeUrl = (tabs && tabs.length > 0) ? tabs[0].url : null;
-		var cookieQuery = (activeUrl && activeUrl.indexOf('http') === 0) ? { url: activeUrl } : { domain: currentDomain };
+		if(!activeUrl || activeUrl.indexOf('http') !== 0){
+			showToast('No active site');
+			return;
+		}
+		var domainFromUrl = getDomainKey(activeUrl);
+		var cookieQuery = { url: activeUrl };
 		chrome.cookies.getAll(cookieQuery, function(cookies) {
 			chrome.storage.local.get('profiles', function(items){
 				var profile = {};
 				if(items && items.profiles){
 					profile = items.profiles;
 				}
-				if(!profile[currentDomain]){
-					profile[currentDomain] = { "currentProfile": target, "profileData": {} };
+				if(!profile[domainFromUrl]){
+					profile[domainFromUrl] = { "currentProfile": target, "profileData": {} };
 				}
-				if(!profile[currentDomain]['profileData']){
-					profile[currentDomain]['profileData'] = {};
+				if(!profile[domainFromUrl]['profileData']){
+					profile[domainFromUrl]['profileData'] = {};
 				}
-				profile[currentDomain]['profileData'][target] = cookies;
-				if(!profile[currentDomain]['currentProfile']){
-					profile[currentDomain]['currentProfile'] = target;
+				profile[domainFromUrl]['profileData'][target] = cookies;
+				if(!profile[domainFromUrl]['currentProfile']){
+					profile[domainFromUrl]['currentProfile'] = target;
 				}
 				chrome.storage.local.set({ "profiles": profile }, function(){
+					currentDomain = domainFromUrl;
+					domainLoaded();
 					loadProfiles();
 					showToast('Saved cookies');
 				});
@@ -356,55 +403,65 @@ function extrapolateUrlFromCookie(cookie) {
 }
 function changeProfile(event){
 	var target = event.target;
-	var saveData = event.saveData;
-	var currentDomain = $('#domain_label').html();
-	chrome.cookies.getAll({domain: currentDomain}, function(cookies) {
-		var currentProfile = $('#profile_label').html();
-		
-		chrome.storage.local.get('profiles', function(items){
-			var currentDomain = $('#domain_label').html();
-			var oldProfileData = cookies;
-			var newProfileData = items.profiles[currentDomain]['profileData'][target.innerHTML];
+	var saveData = (event && event.saveData === true);
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		var activeUrl = (tabs && tabs.length > 0) ? tabs[0].url : null;
+		if(!activeUrl || activeUrl.indexOf('http') !== 0){
+			showToast('No active site');
+			return;
+		}
+		var currentDomain = $('#domain_label').html();
+		chrome.cookies.getAll({url: activeUrl}, function(cookies) {
+			var currentProfile = $('#profile_label').html();
 			
-			var profile = items.profiles;
-			var domainProfiles = profile[currentDomain]['profileData'];
-			
-			domainProfiles[currentProfile] = oldProfileData;
-			profile[currentDomain]['currentProfile'] = target.innerHTML;
-			profile[currentDomain]['profileData'] = domainProfiles;
-			
-			
-			for(var i=0; i<cookies.length;i++) {
-				chrome.cookies.remove({url: extrapolateUrlFromCookie(cookies[i]), name: cookies[i].name});
-			}
-			
-			if(newProfileData.length > 0){for (var i=0; i<newProfileData.length;i++){
-				newProfileData[i]['url'] = "http" + (newProfileData[i]['secure'] ? "s" : "") + "://" + newProfileData[i]['domain'].replace(/^\./, "");
-				debugLog(newProfileData[i]['domain']);
-				delete newProfileData[i]['hostOnly'];
-				delete newProfileData[i]['session'];
-				debugLog(JSON.stringify(newProfileData[i]));
-				chrome.cookies.set(newProfileData[i]);
-			}}
-			
-			
-			
-			if (typeof saveData === 'undefined' || saveData == true) {
+			chrome.storage.local.get('profiles', function(items){
+				var currentDomain = $('#domain_label').html();
+				var oldProfileData = cookies;
+				var newProfileData = items.profiles[currentDomain]['profileData'][target.innerHTML];
+				
+				var profile = items.profiles;
+				var domainProfiles = profile[currentDomain]['profileData'];
+				
+				if(saveData === true){
+					domainProfiles[currentProfile] = oldProfileData;
+				}
+				profile[currentDomain]['currentProfile'] = target.innerHTML;
+				profile[currentDomain]['profileData'] = domainProfiles;
+				
+				
+				for(var i=0; i<cookies.length;i++) {
+					chrome.cookies.remove({url: extrapolateUrlFromCookie(cookies[i]), name: cookies[i].name});
+				}
+				
+				if(newProfileData.length > 0){for (var i=0; i<newProfileData.length;i++){
+					newProfileData[i]['url'] = "http" + (newProfileData[i]['secure'] ? "s" : "") + "://" + newProfileData[i]['domain'].replace(/^\./, "");
+					debugLog(newProfileData[i]['domain']);
+					delete newProfileData[i]['hostOnly'];
+					delete newProfileData[i]['session'];
+					debugLog(JSON.stringify(newProfileData[i]));
+					chrome.cookies.set(newProfileData[i]);
+				}}
+				
+				
+				
 				chrome.storage.local.set({ "profiles": profile }, function(){
 					loadProfiles();
 				});
-			}
-			
-			
-			//$('#storage_label').text(JSON.stringify(newProfileData));
-			
-			chrome.tabs.query({active: true, currentWindow: true}, function (arrayOfTabs) {
-				var code = 'window.location.reload();';
-				chrome.tabs.executeScript(arrayOfTabs[0].id, {code: code});
+				
+				
+				//$('#storage_label').text(JSON.stringify(newProfileData));
+				
+				chrome.tabs.query({active: true, currentWindow: true}, function (arrayOfTabs) {
+					if(!arrayOfTabs || arrayOfTabs.length === 0){ return; }
+					chrome.scripting.executeScript({
+						target: { tabId: arrayOfTabs[0].id },
+						func: function(){ window.location.reload(); }
+					});
+				});
+				
 			});
 			
 		});
-		
 	});
 	//$('#message_label').text("Profile Change Button clicked " + target.innerHTML);
 }
@@ -434,11 +491,11 @@ function init(){ //POP-UP OPENED, INITIALIZE
 	chrome.tabs.query({active: true, lastFocusedWindow: true}, function(tabs) {
 		tab = tabs[0];
 		url = tab.url;
-		currentDomain = getDomain(url);
+		currentDomain = getDomainKey(url);
 		domainLoaded();
+		loadProfiles();
 	});
 	document.querySelector('#profileCreate_button').addEventListener('click', newProfile, false);
-	loadProfiles();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,16 +1,17 @@
 {
-  "name" : "Cookie Profile Switcher",
-  "version" : "2.0.0",
-  "description" : "Store & Manage multiple cookie profiles per domain.",
-  "permissions": [ "cookies", "tabs", "http://*/*", "https://*/*", "storage" ],
+  "name" : "Cookie Profile Switcher Plus",
+  "version" : "1.0.0",
+  "description" : "Modern, actively maintained fork to manage multiple cookie profiles per domain (MV3 support planned).",
+  "permissions": [ "cookies", "tabs", "storage", "scripting" ],
+  "host_permissions": [ "http://*/*", "https://*/*" ],
   "icons": { "16": "cookie.png", "48": "cookie.png", "128": "cookie.png" },
   "options_page": "options.html",
-  "browser_action": {
+  "action": {
     "default_icon": "cookie.png",
 	"default_popup": "profiles.html"
   },
   "background": {
-    "scripts": ["background.js", "scripts/jquery-3.7.1.js"]
+    "service_worker": "background.js"
   },
-  "manifest_version": 2
+  "manifest_version": 3
 }

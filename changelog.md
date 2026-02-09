@@ -1,5 +1,6 @@
 # Changelog
-## 2.0.0 - 2026-02-09
+## 1.0.0 - 2026-02-09
+- Fork rebrand: Cookie Profile Switcher Plus
 - UI refreshed for options and profile popup
 - Added domain manager to edit profiles per site (options)
 - Added clone/save cookies actions in the popup

@@ -46,10 +46,16 @@ var extension = {};
 		}
 		
 		// Chrome
-		else if(IS_CHROME) {
+	else if(IS_CHROME) {
+		if(chrome.runtime && chrome.runtime.getManifest) {
+			var details = chrome.runtime.getManifest();
+			extension._version = details.version;
+		}
+		else if(chrome.app && chrome.app.getDetails) {
 			var details = chrome.app.getDetails();
 			extension._version = details.version;
 		}
+	}
 		return extension._version;
 	};
 	
@@ -320,8 +326,14 @@ var extension = {};
 			}
 		}
 		else if(IS_CHROME) {
-			chrome.browserAction.setBadgeBackgroundColor({color:[0, 200, 0, 100]});
-			chrome.browserAction.setBadgeText({text:String(text)});
+			if(chrome.action && chrome.action.setBadgeText) {
+				chrome.action.setBadgeBackgroundColor({color:[0, 200, 0, 100]});
+				chrome.action.setBadgeText({text:String(text)});
+			}
+			else if(chrome.browserAction && chrome.browserAction.setBadgeText) {
+				chrome.browserAction.setBadgeBackgroundColor({color:[0, 200, 0, 100]});
+				chrome.browserAction.setBadgeText({text:String(text)});
+			}
 		}
 	};
 	
@@ -334,7 +346,12 @@ var extension = {};
 			});
 		}
 		else if(IS_CHROME) {
-			popovers = chrome.extension.getViews({type: 'popup'});
+			if(chrome.runtime && chrome.runtime.getViews) {
+				popovers = chrome.runtime.getViews({type: 'popup'});
+			}
+			else if(chrome.extension && chrome.extension.getViews) {
+				popovers = chrome.extension.getViews({type: 'popup'});
+			}
 		}
 		
 		return popovers;
@@ -418,7 +435,15 @@ var extension = {};
 			backgroundPage = safari.extension.globalPage.contentWindow;
 		}
 		else if(IS_CHROME) {
-			backgroundPage = chrome.extension.getBackgroundPage();
+			if(chrome.runtime && chrome.runtime.getBackgroundPage) {
+				backgroundPage = chrome.runtime.getBackgroundPage();
+			}
+			else if(chrome.extension && chrome.extension.getBackgroundPage) {
+				backgroundPage = chrome.extension.getBackgroundPage();
+			}
+			else {
+				backgroundPage = null;
+			}
 		}
 		
 		return backgroundPage;
@@ -649,7 +674,16 @@ var extension = {};
 			safariMessageResponseHandlers[messageData.id] = responseCallback;
 		
 		if(IS_CHROME) {
-			if(chrome.tabs) {
+			if(chrome.tabs && chrome.tabs.query) {
+				chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+					var tab = (tabs && tabs.length > 0) ? tabs[0] : null;
+					if(tab && tab.id >= 0)
+					{
+						chrome.tabs.sendMessage(tab.id, messageData);
+					}
+				});
+			}
+			else if(chrome.tabs && chrome.tabs.getSelected) {
 				chrome.tabs.getSelected(null, function(tab) {
 					if(tab && tab.id >= 0)
 					{
