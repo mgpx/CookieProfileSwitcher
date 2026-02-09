@@ -1,27 +1,87 @@
-# Cookie Profile Switcher
+﻿# Cookie Profile Switcher
 
-## Install
-Install through the Chrome Webstore at: https://chrome.google.com/webstore/detail/cookie-profile-switcher/dicajblfgcpecbkhkjaljphlmkhohelc
+## English
 
-## About
-Cookie Profile Switcher allows you to easily manage multiple cookie sessions for all of your websites! No more logging out & logging in, just to switch your user profile. This is a MUST have for people who manage multiple social media profiles, emails or eCommerce accounts. Simply create a new profile in the extension, login to your user account, then you can switch between your profiles with ease.
+### Install (Developer Mode)
+This version is not published in the Web Store. To install:
+1. Open `chrome://extensions` (or `edge://extensions`).
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select the project folder.
+4. Pin the extension and open any site to use the popup.
 
-If you've got questions, bugs to report or requests for new features, please contact me via email at emerysteele [at] gmail.com
+### Overview
+Cookie Profile Switcher lets you manage multiple cookie sessions for the same site without logging out and logging back in. Create profiles per domain and switch between them instantly.
 
+### What Changed in 2.0
+- Refreshed UI for the options page and popup.
+- Added domain-focused profile management in Options.
+- Added actions to clone and save cookies from the current profile.
+- Updated bundled libraries to current non-minified versions.
 
-## How it Works
-The extension at it's core is fairly simple. It takes advantage of Google Chrome Extension's cookie & storage APIs. When a new profile is created, the profile name is stored in Google Chrome's local storage. Then when you switch to another profile, the cookie data for the website on the active tab is saved to the previous profile; And the cookie data from the local storage is loaded into the cookie store, effectively swapping the cookies.
+### How It Works
+The extension uses the browser cookie and storage APIs. Profiles are stored in `chrome.storage.local`. When you switch profiles, cookies from the active site are saved to the previous profile and cookies from the selected profile are loaded into the browser.
 
+### Project Origin
+This project is based on the original open-source extension by Emery Steele.
 
-## License Info
-This work is licensed under a GNU General Public License v3.0.
+Source:
+```
+https://github.com/emerysteele/CookieProfileSwitcher
+```
 
-This extension uses the following open-source projects:
+Contact:
+```
+emerysteele@gmail.com
+```
 
-* jQuery
-* Bootstrap
-* Font Awesome
-* Showdown
+### License
+GNU General Public License v3.0.
 
-## Analytics
-This extension uses Google Analytics to gather a small amount of anonymous usage data. This data includes: browser version, number of sessions per user, and average session length. Personal information like your profile or cookie data will not be tracked. Ever. The usage information is used to improve the usability of extension & help with bug fixes.
+### Dependencies
+- jQuery
+- Bootstrap
+- Font Awesome
+- Showdown
+
+## Português
+
+### Instalação (Modo Desenvolvedor)
+Esta versão não está publicada na Web Store. Para instalar:
+1. Abra `chrome://extensions` (ou `edge://extensions`).
+2. Ative **Modo do desenvolvedor**.
+3. Clique em **Carregar sem compactação** e selecione a pasta do projeto.
+4. Fixe a extensão e abra qualquer site para usar o popup.
+
+### Visão Geral
+O Cookie Profile Switcher permite gerenciar múltiplas sessões de cookies no mesmo site sem precisar sair e entrar novamente. Crie perfis por domínio e alterne entre eles rapidamente.
+
+### O que mudou na versão 2.0
+- UI renovada para a página de opções e o popup.
+- Gerenciamento de perfis por domínio nas opções.
+- Ações para clonar e salvar cookies do perfil atual.
+- Bibliotecas atualizadas para versões atuais sem minificação.
+
+### Como Funciona
+A extensão usa as APIs de cookies e armazenamento do navegador. Os perfis ficam no `chrome.storage.local`. Ao trocar de perfil, os cookies do site ativo são salvos no perfil anterior e os cookies do perfil escolhido são carregados no navegador.
+
+### Origem do Projeto
+Este projeto é baseado na extensão open-source original de Emery Steele.
+
+Fonte:
+```
+https://github.com/emerysteele/CookieProfileSwitcher
+```
+
+Contato:
+```
+emerysteele@gmail.com
+```
+
+### Licença
+GNU General Public License v3.0.
+
+### Dependências
+- jQuery
+- Bootstrap
+- Font Awesome
+- Showdown

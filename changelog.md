@@ -1,4 +1,10 @@
 # Changelog
+## 2.0.0 - 2026-02-09
+- UI refreshed for options and profile popup
+- Added domain manager to edit profiles per site (options)
+- Added clone/save cookies actions in the popup
+- Updated third-party libraries to current non-minified versions
+
 ## 1.3.3
 - Extension was broken. Update code to remove leading '.' from url that was introduced with chrome api update.
 

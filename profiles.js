@@ -9,6 +9,15 @@ function debugLog(logData){
 		console.log(logData);
 	}
 }
+function showToast(message){
+	var toast = document.getElementById('toast');
+	if(!toast){ return; }
+	toast.textContent = message;
+	toast.classList.add('show');
+	setTimeout(function(){
+		toast.classList.remove('show');
+	}, 1400);
+}
 
 // BEGIN DOMAIN FUNCTIONS //
 function getHostName(url) {
@@ -332,6 +341,7 @@ function saveCurrentProfileCookies(event){
 				}
 				chrome.storage.local.set({ "profiles": profile }, function(){
 					loadProfiles();
+					showToast('Saved cookies');
 				});
 			});
 		});
