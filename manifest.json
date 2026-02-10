@@ -2,7 +2,7 @@
   "name" : "Cookie Profile Switcher Plus",
   "version" : "1.0.0",
   "description" : "Modern, actively maintained fork to manage multiple cookie profiles per domain (MV3 support planned).",
-  "permissions": [ "cookies", "tabs", "storage", "scripting" ],
+  "permissions": [ "cookies", "tabs", "storage" ],
   "host_permissions": [ "http://*/*", "https://*/*" ],
   "icons": { "16": "cookie.png", "48": "cookie.png", "128": "cookie.png" },
   "options_page": "options.html",

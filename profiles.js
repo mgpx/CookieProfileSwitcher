@@ -473,10 +473,7 @@ function changeProfile(event){
 				
 				chrome.tabs.query({active: true, currentWindow: true}, function (arrayOfTabs) {
 					if(!arrayOfTabs || arrayOfTabs.length === 0){ return; }
-					chrome.scripting.executeScript({
-						target: { tabId: arrayOfTabs[0].id },
-						func: function(){ window.location.reload(); }
-					});
+					chrome.tabs.reload(arrayOfTabs[0].id);
 				});
 				
 			});
