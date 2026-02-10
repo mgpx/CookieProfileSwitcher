@@ -157,19 +157,20 @@ function removeProfile(event){
 	chrome.storage.local.get('profiles', function(items){
 		var currentDomain = $('#domain_label').html();
 		var currentProfile = $('#profile_label').html();
-		var profile = items.profiles;
+		var profile = (items && items.profiles) ? items.profiles : {};
+		if(!profile[currentDomain] || !profile[currentDomain]['profileData']){ return; }
 		
 		delete profile[currentDomain]['profileData'][target];
 		
-		var newProfile = Object.keys(profile[currentDomain]['profileData'])[0];
-		var passedVar = {'target':{'innerHTML':newProfile},'saveData':false};
-		
-		if(currentProfile == target){
-			profile[currentDomain]['currentProfile'] = newProfile;
+		var remainingProfiles = Object.keys(profile[currentDomain]['profileData']);
+		if(remainingProfiles.length === 0){
+			delete profile[currentDomain];
+		}
+		else if(currentProfile == target){
+			profile[currentDomain]['currentProfile'] = remainingProfiles[0];
 		}
 		
 		chrome.storage.local.set({ "profiles": profile }, function(){
-			if(currentProfile == target){changeProfile(passedVar);}
 			loadProfiles();
 		});
 		//console.log(JSON.stringify(profile));
@@ -213,12 +214,20 @@ function loadProfiles(){
 		}
 		
 		if(jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles) || jQuery.isEmptyObject(items.profiles[currentDomain])){
-			profile = JSON.parse('{"currentProfile":"Profile 1", "profileData":{"Profile 1": []}}');
+			$('#profile_label').html('No active profile');
+			var emptyTableRef = document.getElementById('profileTable').getElementsByTagName('tbody')[0];
+			var emptyRow = emptyTableRef.insertRow(1);
+			var emptyCell = emptyRow.insertCell(0);
+			emptyCell.colSpan = 2;
+			emptyCell.className = "smallText";
+			emptyCell.textContent = "This domain has no profiles yet. Create your first profile to start.";
+			addProfileListeners();
+			return;
 		}
 		else{
 			profile = profiles[domain];
 		}
-		$('#profile_label').html(profile['currentProfile']);
+		$('#profile_label').html(profile['currentProfile'] || 'No active profile');
 		//$('#storage_label').html(JSON.stringify(profile['profileData']));
 		
 		for (var profileData in profile['profileData']){
@@ -295,10 +304,6 @@ function loadProfiles(){
 				newCell2.appendChild(cellSpan);
 			}
 		}
-		var tableRef = document.getElementById('profileTable').getElementsByTagName('tbody')[0];
-		if(tableRef.rows.length < 4){
-			tableRef.getElementsByClassName('removeProfile')[0].parentNode.removeChild(tableRef.getElementsByClassName('removeProfile')[0]);
-		}
 		addProfileListeners();
 		//console.log(JSON.stringify(profile));
 		loadDomainCookieStore();
@@ -317,9 +322,10 @@ function newProfile(){
 		chrome.storage.local.get('profiles', function(items){
 			var profile = {};
 			var domainProfile = {};
+			var isFirstProfileForDomain = (jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles) || jQuery.isEmptyObject(items.profiles[domainFromUrl]));
 		
-			if(jQuery.isEmptyObject(items) || jQuery.isEmptyObject(items.profiles) || jQuery.isEmptyObject(items.profiles[domainFromUrl])){
-				domainProfile = JSON.parse('{"currentProfile":"Profile 1", "profileData":{"Profile 1": []}}');
+			if(isFirstProfileForDomain){
+				domainProfile = JSON.parse('{"currentProfile":"", "profileData":{}}');
 			}
 			else{
 				domainProfile = items.profiles[domainFromUrl];
@@ -331,13 +337,27 @@ function newProfile(){
 		
 			if(newProfileName != "")
 			{
-				if(cloneCookies === true){
+				if(isFirstProfileForDomain){
+					chrome.cookies.getAll({ url: activeUrl }, function(cookies) {
+						domainProfile['profileData'][newProfileName] = cookies || [];
+						domainProfile['currentProfile'] = newProfileName;
+						profile[domainFromUrl] = domainProfile;
+						currentDomain = domainFromUrl;
+						domainLoaded();
+						$('#profile_label').html(domainProfile['currentProfile']);
+						chrome.storage.local.set({ "profiles": profile }, function(){
+							loadProfiles();
+							showToast('Profile created with current cookies');
+						});
+					});
+				}
+				else if(cloneCookies === true){
 					chrome.cookies.getAll({ url: activeUrl }, function(cookies) {
 						domainProfile['profileData'][newProfileName] = cookies;
 						profile[domainFromUrl] = domainProfile;
 						currentDomain = domainFromUrl;
 						domainLoaded();
-						$('#profile_label').html(profile['currentProfile']);
+						$('#profile_label').html(domainProfile['currentProfile'] || 'No active profile');
 						chrome.storage.local.set({ "profiles": profile }, function(){
 							loadProfiles();
 						});
@@ -348,7 +368,7 @@ function newProfile(){
 					profile[domainFromUrl] = domainProfile;
 					currentDomain = domainFromUrl;
 					domainLoaded();
-					$('#profile_label').html(profile['currentProfile']);
+					$('#profile_label').html(domainProfile['currentProfile'] || 'No active profile');
 					chrome.storage.local.set({ "profiles": profile }, function(){
 						loadProfiles();
 					});
